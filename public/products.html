@@ -186,6 +186,23 @@
                 };
 
                 console.log("Enviando al API:", JSON.stringify(requestBody, null, 2));
+                
+                try { 
+                    const response = await fetch('/api/execute', 
+                    { method: 'POST', headers: { 
+                        'Content-Type': 'application/json' }, 
+                        body: JSON.stringify(requestBody) }); // Si la respuesta del servidor no es exitosa (ej. 404, 500) 
+                        if (!response.ok) { 
+                            // Leemos la respuesta como TEXTO para ver qué nos mandó el servidor 
+                            const errorText = await response.text(); throw new Error(`El servidor respondió con un error ${response.status}: ${errorText}`); 
+                        } 
+                        // Si todo fue bien, ahora sí intentamos leer el JSON 
+                        const data = await response.json(); console.log('Respuesta Exitosa:', data); 
+                    } catch (error) { console.error('Error en el pago:', error); 
+                    // Ahora el alert mostrará un mensaje mucho más útil 
+                    alert(`Ocurrió un error: ${error.message}`); loaderOverlay.style.display = 'none'; 
+                }
+                /*
                 try {
                     const response = await fetch('/api/execute', {
                         method: 'POST',
@@ -200,6 +217,10 @@
                     alert(`Ocurrió un error: ${error.message}`);
                     loaderOverlay.style.display = 'none';
                 }
+            */
+
+
+
             });
             
             doneBtn.addEventListener('click', () => {
