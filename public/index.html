@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración de Terminal de Pago</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; color: #333; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .api-tester { background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); padding: 30px; width: 100%; max-width: 600px; }
+        h1, h2 { text-align: center; color: #1a202c; margin-top: 0; }
+        h2 { margin-top: 30px; color: #4a5568; text-align: left; }
+        .preferences-container, .tip-options-section { display: grid; gap: 15px; }
+        .preference-item { display: flex; justify-content: space-between; align-items: center; background-color: #f7fafc; padding: 12px 18px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .preference-text { display: flex; flex-direction: column; margin-right: 15px; }
+        .preference-text label { font-weight: 500; color: #2d3748; cursor: pointer; }
+        .preference-text small { font-size: 0.85em; color: #718096; margin-top: 2px; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 28px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #48bb78; }
+        input:checked + .slider:before { transform: translateX(22px); }
+        .tip-options-section { border: 1px solid #cbd5e0; border-radius: 8px; padding: 20px; margin-top: 20px; }
+        .tip-options-values { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; margin-top: 15px; transition: all 0.3s ease-in-out; overflow: hidden; max-height: 0; opacity: 0; }
+        .tip-options-values.visible { max-height: 200px; opacity: 1; }
+        .tip-option-item { display: flex; align-items: center; gap: 8px; }
+        .tip-option-item input[type="checkbox"] { width: 18px; height: 18px; }
+        .continue-button { display: block; width: 100%; padding: 15px; font-size: 16px; font-weight: bold; color: white; background-color: #4299e1; border: none; border-radius: 8px; cursor: pointer; margin-top: 30px; transition: background-color 0.3s; }
+        .continue-button:hover { background-color: #3182ce; }
+    </style>
+</head>
+<body>
+    <div class="api-tester">
+        <h1>⚙️ Configuración de Terminal</h1>
+        <h2>Preferencias Generales</h2>
+        <div class="preferences-container">
+            <div class="preference-item"><div class="preference-text"><label for="is_auto_return_enabled">Habilitar Auto Return</label><small>Retornar automáticamente a la app principal.</small></div><label class="switch"><input type="checkbox" id="is_auto_return_enabled" class="preference-toggle"><span class="slider"></span></label></div>
+            <div class="preference-item"><div class="preference-text"><label for="is_tip_enabled">Habilitar Propina (Tip)</label><small>Activa la funcionalidad para agregar propina.</small></div><label class="switch"><input type="checkbox" id="is_tip_enabled" class="preference-toggle" checked><span class="slider"></span></label></div>
+            <div class="preference-item"><div class="preference-text"><label for="is_msi_enabled">Habilitar Meses Sin Intereses</label><small>Permite ofrecer planes de pago a MSI.</small></div><label class="switch"><input type="checkbox" id="is_msi_enabled" class="preference-toggle" checked><span class="slider"></span></label></div>
+            <div class="preference-item"><div class="preference-text"><label for="is_mci_enabled">Habilitar Meses Con Intereses</label><small>Permite ofrecer planes de pago a MCI.</small></div><label class="switch"><input type="checkbox" id="is_mci_enabled" class="preference-toggle"><span class="slider"></span></label></div>
+            <div class="preference-item"><div class="preference-text"><label for="is_dcc_enabled">Habilitar Conversión Dinámica</label><small>Ofrece a clientes extranjeros pagar en su moneda.</small></div><label class="switch"><input type="checkbox" id="is_dcc_enabled" class="preference-toggle"checked><span class="slider"></span></label></div>
+            <div class="preference-item"><div class="preference-text"><label for="is_retry_enabled">Habilitar Reintentos</label><small>Permite reintentar pagos fallidos.</small></div><label class="switch"><input type="checkbox" id="is_retry_enabled" class="preference-toggle"><span class="slider"></span></label></div>
+            <div class="preference-item"><div class="preference-text"><label for="is_share_enabled">Habilitar Compartir</label><small>Muestra botones para compartir el recibo.</small></div><label class="switch"><input type="checkbox" id="is_share_enabled" class="preference-toggle"checked><span class="slider"></span></label></div>
+            <div class="preference-item"><div class="preference-text"><label for="is_auto_print_receipt_enabled">Habilitar Impresión Automática</label><small>Imprime el recibo al finalizar el pago.</small></div><label class="switch"><input type="checkbox" id="is_auto_print_receipt_enabled" class="preference-toggle"><span class="slider"></span></label></div>
+            <div class="preference-item"><div class="preference-text"><label for="is_split_payment_enabled">Habilitar Pago Dividido</label><small>Permite dividir el pago en varias transacciones.</small></div><label class="switch"><input type="checkbox" id="is_split_payment_enabled" class="preference-toggle"><span class="slider"></span></label></div>
+        </div>
+        <div class="tip-options-section">
+            <div class="preference-item"><div class="preference-text"><label for="enable_tip_options_toggle">Configurar Opciones de Propina</label><small>Define los porcentajes predeterminados.</small></div><label class="switch"><input type="checkbox" id="enable_tip_options_toggle" ><span class="slider"></span></label></div>
+            <div id="tip-options-values-container" class="tip-options-values">
+                <div class="tip-option-item"><input type="checkbox" name="tip_option" value="8" id="tip8"><label for="tip8">8%</label></div>
+                <div class="tip-option-item"><input type="checkbox" name="tip_option" value="10" id="tip10"><label for="tip10">10%</label></div>
+                <div class="tip-option-item"><input type="checkbox" name="tip_option" value="14" id="tip14"><label for="tip14">14%</label></div>
+                <div class="tip-option-item"><input type="checkbox" name="tip_option" value="18" id="tip18"><label for="tip18">18%</label></div>
+            </div>
+        </div>
+        <button class="continue-button" id="continue-btn">Continuar a Selección de Productos</button>
+    </div>
+    <script>
+        const enableTipOptionsToggle = document.getElementById('enable_tip_options_toggle');
+        const tipOptionsContainer = document.getElementById('tip-options-values-container');
+        const continueBtn = document.getElementById('continue-btn');
+
+        enableTipOptionsToggle.addEventListener('change', () => {
+            tipOptionsContainer.classList.toggle('visible', enableTipOptionsToggle.checked);
+        });
+
+        continueBtn.addEventListener('click', () => {
+            // 1. Recopilar todas las preferencias
+            const preferences = {};
+            document.querySelectorAll('.preference-toggle').forEach(toggle => {
+                preferences[toggle.id] = toggle.checked;
+            });
+            if (enableTipOptionsToggle.checked) {
+                const selectedTips = [];
+                document.querySelectorAll('input[name="tip_option"]:checked').forEach(checkbox => {
+                    selectedTips.push(parseInt(checkbox.value, 10));
+                });
+                if (selectedTips.length > 0) preferences.tip_options = selectedTips;
+            }
+
+            // 2. Guardar las preferencias en sessionStorage para usarlas en la siguiente página
+            sessionStorage.setItem('paymentPreferences', JSON.stringify(preferences));
+
+            // 3. Redirigir a la página de productos
+            window.location.href = 'products.html';
+        });
+    </script>
+</body>
+</html>

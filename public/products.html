@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda - Selección de Productos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; color: #333; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .product-page-container { background-color: #ffffff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); padding: 40px; width: 100%; max-width: 800px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; }
+        .header h1 { font-size: 2em; color: #1a202c; margin: 0; }
+        .cart-summary { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+        .cart-summary span { font-size: 1.2em; }
+        .product-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 25px; }
+        .product-item { display: flex; flex-direction: column; text-align: center; padding: 20px; border: 2px solid #e2e8f0; border-radius: 12px; transition: all 0.2s ease-in-out; background-color: #fcfcfc; }
+        .product-item:hover { transform: translateY(-5px); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); }
+        .product-item img { width: 120px; height: 120px; object-fit: contain; border-radius: 8px; margin: 0 auto 15px auto; background-color: #edf2f7; padding: 5px; }
+        .product-details .name { font-weight: 600; font-size: 1.1em; color: #2d3748; margin-bottom: 5px; }
+        .product-details .description { color: #718096; font-size: 0.9em; margin-bottom: 15px; min-height: 3em; }
+        .product-details .price { font-weight: 700; font-size: 1.3em; color: #48bb78; }
+        .quantity-selector { display: flex; align-items: center; justify-content: center; margin: 15px 0; }
+        .quantity-selector input { width: 50px; text-align: center; border: 1px solid #cbd5e0; border-radius: 8px; padding: 8px; font-size: 1em; }
+        .btn { padding: 10px 20px; font-size: 1em; font-weight: 600; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; width: 100%; }
+        .btn-add-cart { background-color: #4299e1; }
+        .btn-view-cart { background-color: #38a169; margin-top: 30px; padding: 15px; font-size: 1.1em; }
+        
+        /* Estilos del Modal del Carrito */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background-color: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 500px; position: relative; }
+        .modal-close { position: absolute; top: 15px; right: 20px; font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer; }
+        .cart-items-list { max-height: 300px; overflow-y: auto; margin-top: 20px; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #e2e8f0; }
+        .cart-total { text-align: right; font-size: 1.5em; font-weight: 700; margin-top: 20px; }
+        .btn-pay { background-color: #48bb78; margin-top: 20px; }
+        
+        /* Loader */
+        .loader-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.95); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; }
+        .spinner { width: 60px; height: 60px; border: 6px solid rgba(0, 0, 0, 0.1); border-top-color: #4299e1; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 30px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="product-page-container">
+        <div class="header">
+            <h1>🛍️ Sistema Punto de Venta 🛍️</h1>
+            <div class="cart-summary">
+                <span>🛒</span>
+                <span id="cart-item-count">0</span>
+            </div>
+        </div>
+        <div class="product-list" id="product-list">
+            </div>
+        <button class="btn btn-view-cart" id="view-cart-btn" disabled>Ver Carrito y Pagar</button>
+    </div>
+
+    <div id="cart-modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" id="modal-close-btn">&times;</span>
+            <h2>Resumen de tu Compra</h2>
+            <div id="cart-items-list" class="cart-items-list"></div>
+            <div id="cart-total" class="cart-total"></div>
+            <button class="btn btn-pay" id="pay-btn">Pagar en Terminal</button>
+        </div>
+    </div>
+    
+    <div id="loader-overlay" class="loader-overlay">
+        <div class="loader-content">
+            <div class="spinner"></div>
+            <p>Petición enviada a la terminal...</p>
+            <button class="btn" id="done-btn" style="background-color: #4299e1;">Finalizar</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const productData = [
+                { id: 1, name: "Camiseta Amarilla", description: "Talla M, 100% algodón suave.", price: 1.00, img: "https://i5.walmartimages.com/asr/ae3e65a0-9b44-4e5b-801a-45bc4fc050e6.64b61c54a12fb87fd11b1f341801126f.jpeg" },
+                { id: 2, name: "Pantalón Azul", description: "Talla 40, corte recto, denim.", price: 2.00, img: "https://amigosafety.com/images/productos/1680213793_PANTALON%20FRENTE.png" },
+                { id: 3, name: "Saco Rojo", description: "Talla L, tejido cálido y elegante.", price: 10.00, img: "https://julio.com/media/catalog/product/5/4/blazer-rojo-de-lino-corte-frances9PfW.jpg?quality=80&bg-color=255,255,255&height=638&width=508&canvas=508:638" }
+            ];
+
+            const productList = document.getElementById('product-list');
+            const cartItemCount = document.getElementById('cart-item-count');
+            const viewCartBtn = document.getElementById('view-cart-btn');
+            const cartModal = document.getElementById('cart-modal');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            const payBtn = document.getElementById('pay-btn');
+            const loaderOverlay = document.getElementById('loader-overlay');
+            const doneBtn = document.getElementById('done-btn');
+
+            let cart = [];
+            const preferences = JSON.parse(sessionStorage.getItem('paymentPreferences'));
+            if (!preferences) {
+                alert("Configuración no encontrada. Redirigiendo...");
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // --- RENDERIZADO DE PRODUCTOS ---
+            const renderProducts = () => {
+                productList.innerHTML = '';
+                productData.forEach(p => {
+                    const productEl = document.createElement('div');
+                    productEl.className = 'product-item';
+                    productEl.innerHTML = `
+                        <img src="${p.img}" alt="${p.name}">
+                        <div class="product-details">
+                            <span class="name">${p.name}</span>
+                            <span class="description">${p.description}</span>
+                            <span class="price">$${p.price.toFixed(2)}</span>
+                        </div>
+                        <div class="quantity-selector">
+                            <input type="number" id="qty-${p.id}" value="1" min="1" max="10">
+                        </div>
+                        <button class="btn btn-add-cart" data-id="${p.id}">Agregar al Carrito</button>
+                    `;
+                    productList.appendChild(productEl);
+                });
+            };
+
+            // --- LÓGICA DEL CARRITO ---
+            const updateCart = () => {
+                const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+                cartItemCount.textContent = totalItems;
+                viewCartBtn.disabled = totalItems === 0;
+            };
+
+            productList.addEventListener('click', (e) => {
+                if (e.target.classList.contains('btn-add-cart')) {
+                    const productId = parseInt(e.target.dataset.id);
+                    const quantity = parseInt(document.getElementById(`qty-${productId}`).value);
+                    const product = productData.find(p => p.id === productId);
+                    
+                    const existingItem = cart.find(item => item.id === productId);
+                    if (existingItem) {
+                        existingItem.quantity += quantity;
+                    } else {
+                        cart.push({ ...product, quantity: quantity });
+                    }
+                    updateCart();
+                }
+            });
+
+            // --- LÓGICA DEL MODAL ---
+            const renderCartModal = () => {
+                const cartItemsList = document.getElementById('cart-items-list');
+                const cartTotalEl = document.getElementById('cart-total');
+                cartItemsList.innerHTML = '';
+                let total = 0;
+
+                cart.forEach(item => {
+                    const itemTotal = item.price * item.quantity;
+                    total += itemTotal;
+                    cartItemsList.innerHTML += `
+                        <div class="cart-item">
+                            <span><strong>${item.name}</strong> (x${item.quantity})</span>
+                            <span>$${itemTotal.toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+                cartTotalEl.innerHTML = `<strong>Total:</strong> $${total.toFixed(2)}`;
+                cartModal.style.display = 'flex';
+            };
+
+            viewCartBtn.addEventListener('click', renderCartModal);
+            modalCloseBtn.addEventListener('click', () => cartModal.style.display = 'none');
+            window.addEventListener('click', e => { if (e.target === cartModal) cartModal.style.display = 'none'; });
+
+            // --- LÓGICA DE PAGO ---
+            payBtn.addEventListener('click', async () => {
+                cartModal.style.display = 'none';
+                loaderOverlay.style.display = 'flex';
+                
+                // Primero, la función que genera el número
+                const getRandomNumber = () => Math.floor(Math.random() * 100) + 1;
+
+                const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                const reference = `Ref${getRandomNumber()}PedidoDe${cart.reduce((sum, i) => sum + i.quantity, 0)}Articulos`;
+                
+                const requestBody = {
+                    reference: reference,
+                    amount: totalAmount,
+                    serial_number_pos: "P8C1231120001899",
+                    preferences: preferences
+                };
+
+                console.log("Enviando al API:", JSON.stringify(requestBody, null, 2));
+                try {
+                    const response = await fetch('/api/execute', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestBody)
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.error || 'Error en la respuesta del servidor');
+                    console.log('Respuesta Exitosa:', data);
+                } catch (error) {
+                    console.error('Error en el pago:', error);
+                    alert(`Ocurrió un error: ${error.message}`);
+                    loaderOverlay.style.display = 'none';
+                }
+            });
+            
+            doneBtn.addEventListener('click', () => {
+                sessionStorage.removeItem('paymentPreferences');
+                window.location.href = 'index.html';
+            });
+            
+            // Iniciar la página
+            renderProducts();
+        });
+    </script>
+</body>
+</html>
